@@ -1,4 +1,5 @@
-import { createServer } from 'node:https';
+import { createServer as createHttpServer } from 'node:http';
+import { createServer as createHttpsServer } from 'node:https';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { promises as fs } from 'node:fs';
@@ -15,6 +16,7 @@ const passwordPath = path.join(certDir, 'catalogo-intranet-password.txt');
 const certificatePath = path.join(certDir, 'catalogo-intranet-server.cer');
 const serverPfxPath = path.join(certDir, 'catalogo-intranet-server.pfx');
 const defaultPort = Number.parseInt(process.env.INTRANET_PORT ?? '4173', 10);
+const defaultHttpPort = Number.parseInt(process.env.INTRANET_HTTP_PORT ?? '80', 10);
 
 const MIME_TYPES = new Map([
   ['.css', 'text/css; charset=utf-8'],
@@ -73,27 +75,132 @@ function logRequest(request, response, requestPath, requestKind) {
   );
 }
 
+function logInfo(message) {
+  console.log(`[Catalogo intranet] ${message}`);
+}
+
+function runPowerShellCommand(commandText) {
+  if (process.platform !== 'win32') {
+    return null;
+  }
+
+  const result = spawnSync(
+    'powershell',
+    ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', commandText],
+    {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    },
+  );
+
+  if (result.status !== 0) {
+    return null;
+  }
+
+  return result.stdout?.trim() || null;
+}
+
 function fail(message) {
   console.error(`\n[Catalogo intranet] ${message}`);
   process.exit(1);
 }
 
+function isLinkLocalIpv4(address) {
+  return address.startsWith('169.254.');
+}
+
+function isPrivateIpv4(address) {
+  if (address.startsWith('10.') || address.startsWith('192.168.')) {
+    return true;
+  }
+
+  const match = /^172\.(\d{1,3})\./.exec(address);
+  if (!match) {
+    return false;
+  }
+
+  const secondOctet = Number.parseInt(match[1], 10);
+  return secondOctet >= 16 && secondOctet <= 31;
+}
+
+function isVirtualInterface(name) {
+  return /vmware|virtualbox|hyper-v|vethernet|loopback/i.test(name);
+}
+
 function getLanIpv4() {
   const interfaces = networkInterfaces();
+  const candidates = [];
 
-  for (const details of Object.values(interfaces)) {
+  for (const [interfaceName, details] of Object.entries(interfaces)) {
     if (!details) {
       continue;
     }
 
     for (const detail of details) {
       if (detail.family === 'IPv4' && !detail.internal) {
-        return detail.address;
+        candidates.push({
+          address: detail.address,
+          interfaceName,
+        });
       }
     }
   }
 
-  return null;
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  candidates.sort((left, right) => {
+    const leftScore =
+      (isPrivateIpv4(left.address) ? 100 : 0) +
+      (!isLinkLocalIpv4(left.address) ? 10 : 0) +
+      (!isVirtualInterface(left.interfaceName) ? 5 : 0);
+    const rightScore =
+      (isPrivateIpv4(right.address) ? 100 : 0) +
+      (!isLinkLocalIpv4(right.address) ? 10 : 0) +
+      (!isVirtualInterface(right.interfaceName) ? 5 : 0);
+
+    return rightScore - leftScore;
+  });
+
+  return candidates[0];
+}
+
+function getWindowsNetworkProfile(interfaceName) {
+  if (!interfaceName) {
+    return null;
+  }
+
+  const output = runPowerShellCommand(
+    `$profile = Get-NetConnectionProfile -InterfaceAlias '${interfaceName.replace(/'/g, "''")}' -ErrorAction SilentlyContinue | Select-Object -First 1 InterfaceAlias, Name, NetworkCategory, IPv4Connectivity; if ($profile) { $profile | ConvertTo-Json -Compress }`,
+  );
+
+  if (!output) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(output);
+  }
+  catch {
+    return null;
+  }
+}
+
+function formatNetworkCategory(networkCategory) {
+  if (networkCategory === 0 || networkCategory === '0') {
+    return 'Public';
+  }
+
+  if (networkCategory === 1 || networkCategory === '1') {
+    return 'Private';
+  }
+
+  if (networkCategory === 2 || networkCategory === '2') {
+    return 'DomainAuthenticated';
+  }
+
+  return typeof networkCategory === 'string' ? networkCategory : null;
 }
 
 function ensureDist() {
@@ -415,13 +522,44 @@ async function handleRequest(request, response) {
   }
 }
 
-export async function startServer({ port = defaultPort, silent = false } = {}) {
+function buildHttpsBaseUrl(hostHeader, lanIp, httpsPort) {
+  const rawHost = hostHeader || lanIp;
+  const normalizedHost = rawHost.startsWith('[')
+    ? rawHost.replace(/^\[([^\]]+)\](?::\d+)?$/, '$1')
+    : rawHost.replace(/:\d+$/, '');
+  return `https://${normalizedHost}:${httpsPort}`;
+}
+
+function createRedirectServer({ lanIp, httpsPort, httpPort }) {
+  return createHttpServer((request, response) => {
+    const requestPath = normalizeRequestPath(request.url ?? '/');
+    const redirectBaseUrl = buildHttpsBaseUrl(request.headers.host, lanIp, httpsPort);
+    const location = `${redirectBaseUrl}${request.url ?? '/'}`;
+
+    response.writeHead(308, {
+      Location: location,
+      'Cache-Control': 'no-cache',
+      'Content-Type': 'text/plain; charset=utf-8',
+    });
+    response.end(`Redirecting to ${location}`);
+    logRequest(request, response, requestPath, 'redirect-http');
+  });
+}
+
+export async function startServer({
+  port = defaultPort,
+  httpPort = defaultHttpPort,
+  silent = false,
+} = {}) {
   ensureDist();
 
-  const lanIp = getLanIpv4();
-  if (!lanIp) {
+  const lanCandidate = getLanIpv4();
+  if (!lanCandidate) {
     fail('No se ha detectado una IPv4 de LAN. Conecta el PC a una red local antes de arrancar el servidor.');
   }
+  const lanIp = lanCandidate.address;
+  const networkProfile = getWindowsNetworkProfile(lanCandidate.interfaceName);
+  const networkCategory = formatNetworkCategory(networkProfile?.NetworkCategory);
 
   const hostnames = Array.from(
     new Set(['localhost', '127.0.0.1', lanIp, process.env.COMPUTERNAME].filter(Boolean)),
@@ -430,7 +568,7 @@ export async function startServer({ port = defaultPort, silent = false } = {}) {
   ensureCertArtifacts(hostnames);
 
   const password = readFileSync(passwordPath, 'utf8');
-  const server = createServer(
+  const server = createHttpsServer(
     {
       pfx: readFileSync(serverPfxPath),
       passphrase: password,
@@ -445,22 +583,74 @@ export async function startServer({ port = defaultPort, silent = false } = {}) {
     server.listen(port, '0.0.0.0', resolve);
   });
 
+  const redirectServer = createRedirectServer({ lanIp, httpsPort: port, httpPort });
+  let redirectServerEnabled = false;
+  try {
+    await new Promise((resolve, reject) => {
+      redirectServer.once('error', reject);
+      redirectServer.listen(httpPort, '0.0.0.0', resolve);
+    });
+    redirectServerEnabled = true;
+  }
+  catch (error) {
+    redirectServer.close();
+    if (!silent) {
+      const reason = error instanceof Error ? error.message : 'No disponible';
+      logInfo(`Aviso: no se pudo abrir HTTP en el puerto ${httpPort} para redirigir a HTTPS (${reason}).`);
+    }
+  }
+
   const urls = {
     app: `https://${lanIp}:${port}/`,
     install: `https://${lanIp}:${port}/install`,
     certificate: `https://${lanIp}:${port}/ca.crt`,
+    redirect: `http://${lanIp}${httpPort === 80 ? '' : `:${httpPort}`}/`,
   };
 
   if (!silent) {
     console.log('');
-    console.log('[Catalogo intranet] Servidor HTTPS activo');
-    console.log(`[Catalogo intranet] App: ${urls.app}`);
-    console.log(`[Catalogo intranet] Instalacion: ${urls.install}`);
-    console.log(`[Catalogo intranet] Certificado: ${urls.certificate}`);
+    logInfo('Servidor HTTPS activo');
+    logInfo(`App: ${urls.app}`);
+    logInfo(`Instalacion: ${urls.install}`);
+    logInfo(`Certificado: ${urls.certificate}`);
+    if (redirectServerEnabled) {
+      logInfo(`HTTP -> HTTPS: ${urls.redirect}`);
+    }
+    logInfo(`Interfaz: ${lanCandidate.interfaceName}`);
+    if (networkCategory) {
+      logInfo(`Perfil de red: ${networkCategory}`);
+    }
+    if (isLinkLocalIpv4(lanIp)) {
+      logInfo('Aviso: la IP detectada es 169.254.x.x. Esa red suele no ser accesible desde otros dispositivos por Wi-Fi.');
+    }
+    if (networkCategory === 'Public') {
+      logInfo('Aviso: Windows tiene esta red como Public. El firewall puede bloquear accesos desde otros dispositivos.');
+      logInfo('Ejecuta `npm run intranet:allow-firewall` o cambia la red a perfil Private.');
+    }
     console.log('');
   }
 
-  return { server, urls, lanIp, port };
+  const stop = async () => {
+    const closeServer = (target) =>
+      new Promise((resolve, reject) => target.close((error) => (error ? reject(error) : resolve())));
+    await closeServer(server);
+    if (redirectServerEnabled) {
+      await closeServer(redirectServer);
+    }
+  };
+
+  return {
+    server,
+    redirectServer,
+    redirectServerEnabled,
+    stop,
+    urls,
+    lanIp,
+    port,
+    httpPort,
+    interfaceName: lanCandidate.interfaceName,
+    networkProfile,
+  };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {

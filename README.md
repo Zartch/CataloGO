@@ -54,11 +54,22 @@ Otros comandos utiles:
 
 ```bash
 npm run build
+npm run intranet:allow-firewall
+npm run intranet:remove-firewall
 npm run intranet:install
 npm run intranet:serve
 npm run test
 npm run lint
 ```
+
+- `npm run build`: genera el build de produccion en `dist/`
+- `npm run intranet:allow-firewall`: crea la regla de Windows Firewall para permitir acceso LAN al puerto `4173`
+- `npm run intranet:allow-firewall`: crea la regla de Windows Firewall para permitir acceso LAN a `4173` y `80`
+- `npm run intranet:remove-firewall`: elimina esa regla de Windows Firewall
+- `npm run intranet:install`: hace build y arranca el servidor HTTPS de intranet en el mismo proceso
+- `npm run intranet:serve`: arranca solo el servidor HTTPS usando el `dist/` existente
+- `npm run test`: ejecuta los tests con Vitest
+- `npm run lint`: revisa el codigo con ESLint
 
 Servidor de desarrollo:
 
@@ -102,6 +113,7 @@ Instalacion por intranet en movil:
 - hace build de produccion y levanta un servidor HTTPS en la LAN
 - publica la app en `/` y una guia de instalacion en `/install`
 - expone el certificado local en `/ca.crt` para que Android/iPhone puedan confiar en la conexion
+- intenta levantar tambien un redirector HTTP para enviar `http://...` a `https://...`
 - pensado para ejecutarse en un PC Windows conectado a la misma red que los moviles
 
 Notas sobre HTTPS local:
@@ -112,6 +124,10 @@ Notas sobre HTTPS local:
 - solo se regenera si falta, caduca o ya no cubre la IP/host actual
 - cada movil debe confiar ese certificado una vez antes de instalar la app
 - si cambia la IP del PC, usa la nueva URL mostrada en consola
+- si Windows marca la red como `Public`, el servidor mostrara un aviso
+- para abrir los puertos `4173` y `80` en Windows Firewall: `npm run intranet:allow-firewall`
+- esa regla se limita a `node.exe`, TCP `4173/80` y `LocalSubnet`
+- para quitar la regla manualmente: `npm run intranet:remove-firewall`
 
 ## Funcionalidad implementada
 
