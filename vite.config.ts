@@ -8,6 +8,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons.svg', 'apple-touch-icon.png', 'pwa-192.png', 'pwa-512.png'],
+      workbox: {
+        navigateFallbackDenylist: [/^\/install(?:\/|\.html)?$/i, /^\/health$/i, /^\/ca\.crt$/i],
+      },
       manifest: {
         name: 'CataloGo',
         short_name: 'CataloGo',

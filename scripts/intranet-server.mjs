@@ -13,8 +13,9 @@ const projectRoot = path.resolve(__dirname, '..');
 const distDir = path.join(projectRoot, 'dist');
 const certDir = path.join(projectRoot, '.local', 'certs');
 const passwordPath = path.join(certDir, 'catalogo-intranet-password.txt');
-const certificatePath = path.join(certDir, 'catalogo-intranet-server.cer');
+const rootCertificatePath = path.join(certDir, 'catalogo-intranet-root-ca.cer');
 const serverPfxPath = path.join(certDir, 'catalogo-intranet-server.pfx');
+const firewallRuleName = 'CataloGo Intranet HTTPS';
 const defaultPort = Number.parseInt(process.env.INTRANET_PORT ?? '4173', 10);
 const defaultHttpPort = Number.parseInt(process.env.INTRANET_HTTP_PORT ?? '80', 10);
 
@@ -48,7 +49,7 @@ function getClientAddress(request) {
 }
 
 function classifyRequest(requestPath, request) {
-  if (requestPath === '/install' || requestPath === '/install/') {
+  if (requestPath === '/install' || requestPath === '/install/' || requestPath === '/install.html') {
     return 'pagina-install';
   }
 
@@ -203,6 +204,18 @@ function formatNetworkCategory(networkCategory) {
   return typeof networkCategory === 'string' ? networkCategory : null;
 }
 
+function hasWindowsFirewallRule(ruleName) {
+  if (process.platform !== 'win32') {
+    return null;
+  }
+
+  const output = runPowerShellCommand(
+    `Get-NetFirewallRule -DisplayName '${ruleName.replace(/'/g, "''")}' -ErrorAction SilentlyContinue | Where-Object { $_.Enabled -eq 'True' } | Select-Object -First 1 -ExpandProperty DisplayName`,
+  );
+
+  return output === ruleName;
+}
+
 function ensureDist() {
   if (!existsSync(distDir)) {
     fail('No existe dist/. Ejecuta `npm run intranet:install` o `npm run build` antes de servir la app.');
@@ -243,7 +256,7 @@ function ensureCertArtifacts(hosts) {
     fail(`No se pudieron generar los certificados HTTPS.\n${stderr || stdout || 'Sin detalle adicional.'}`);
   }
 
-  if (!existsSync(serverPfxPath) || !existsSync(certificatePath)) {
+  if (!existsSync(serverPfxPath) || !existsSync(rootCertificatePath)) {
     fail('El script de certificados termino sin dejar los archivos esperados.');
   }
 }
@@ -401,33 +414,59 @@ function getInstallPageHtml(baseUrl) {
       <section class="hero">
         <p style="text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.8rem; font-weight: 700;">CataloGo en intranet</p>
         <h1>Instalacion local en movil</h1>
-        <p>Abre primero el certificado si tu movil aun no confia en esta red local. Despues abre la app y anadela a la pantalla de inicio.</p>
+        <p>Esta pagina no es la app. Esta pagina solo explica los pasos. La app real es la URL de abajo.</p>
         <a class="url-box" href="${baseUrl}/">${baseUrl}/</a>
         <div class="cta-row">
           <a class="button primary" href="${baseUrl}/">Abrir la app</a>
-          <a class="button secondary" href="${baseUrl}/ca.crt">Descargar certificado</a>
+          <a class="button secondary" href="${baseUrl}/ca.crt">Descargar certificado CA</a>
         </div>
-        <div class="note">La app se sirve por HTTPS desde este PC. Si cambia la IP de la maquina, usa la nueva URL que muestra la consola.</div>
+        <div class="note">Objetivo final: abrir la app desde un icono en la pantalla de inicio, sin barra de navegador, y que siga funcionando offline despues de haber cargado una vez con red.</div>
       </section>
 
       <section class="info-grid">
         <article class="card">
-          <h2>iPhone / iPad</h2>
+          <h2>Android</h2>
           <ol>
-            <li>Abre <strong>Descargar certificado</strong> y permite la descarga.</li>
-            <li>Ve a Ajustes, instala el perfil descargado y marca confianza para el certificado si iOS lo solicita.</li>
+            <li>Pulsa <strong>Descargar certificado CA</strong>. El archivo correcto se llama <strong>catalogo-intranet-root-ca.cer</strong>.</li>
+            <li>Si Chrome muestra un aviso tipo <strong>este certificado de null debe instalarse en Ajustes</strong>, es normal. No se instala desde Chrome.</li>
+            <li>Abre <strong>Ajustes</strong> en Android.</li>
+            <li>Ve a <strong>Seguridad y privacidad</strong> -> <strong>Mas ajustes de seguridad</strong> -> <strong>Cifrado y credenciales</strong> -> <strong>Instalar un certificado</strong> -> <strong>Certificado Wi-Fi</strong>.</li>
+            <li>Busca el archivo descargado y elige <strong>M1L3-Labs-CataloGo-Root-CA.cer</strong>. Si Android te pide una clave privada, estas abriendo otro archivo distinto. Borra descargas antiguas y usa ese.</li>
+            <li>Cuando Android te pida un nombre para el certificado, escribe <strong>M1L3 Labs</strong>.</li>
             <li>Vuelve a esta pagina y pulsa <strong>Abrir la app</strong>.</li>
-            <li>En Safari usa Compartir -> Anadir a pantalla de inicio.</li>
+            <li>Comprueba que estas en la app real. La URL correcta es exactamente <strong>${baseUrl}/</strong>. No te quedes en <strong>/install</strong> ni en <strong>/install.html</strong>.</li>
+            <li>Si Chrome sigue diciendo que la conexion no es valida para esta URL, para aqui. No instales la app todavia. Cierra Chrome, vuelve a abrir la URL de la app y confirma primero que ya no sale ese error.</li>
+            <li>Espera a que la app cargue completa y se vea normal.</li>
+            <li>Recarga una vez esa pagina de la app.</li>
+            <li>En Chrome abre el menu de los tres puntos.</li>
+            <li>Busca <strong>Instalar app</strong>. Si no aparece, usa <strong>Anadir a pantalla de inicio</strong>.</li>
+            <li>Si ya habias creado antes un icono y se abre con barra de URL, borra ese icono viejo de la pantalla de inicio antes de seguir.</li>
+            <li>Cuando salga el icono en la pantalla de inicio, abre la app desde ese icono, no desde la pestaña del navegador.</li>
+            <li>Si al abrir el icono sigue apareciendo la barra de URL, no esta instalada como app. Vuelve atras, borra ese icono y repite la instalacion solo despues de que Chrome confie en el certificado.</li>
+            <li>Con red todavia activa, abre la app instalada una vez mas.</li>
+            <li>Despues activa modo avion y prueba a abrirla otra vez desde el icono.</li>
           </ol>
         </article>
 
         <article class="card">
-          <h2>Android</h2>
+          <h2>iPhone / iPad</h2>
           <ol>
-            <li>Abre <strong>Descargar certificado</strong> e instala el certificado si tu navegador no confia todavia en la pagina.</li>
-            <li>Abre <strong>Abrir la app</strong> desde Chrome.</li>
-            <li>Usa el menu del navegador para instalar la app o anadirla a la pantalla de inicio.</li>
-            <li>Abre la app instalada y comprueba que carga sin conexion tras la primera visita.</li>
+            <li>Pulsa <strong>Descargar certificado CA</strong> para bajar <strong>M1L3-Labs-CataloGo-Root-CA.cer</strong>.</li>
+            <li>Si Safari muestra un aviso de descarga o de perfil, es normal. Guarda el archivo.</li>
+            <li>Abre la app <strong>Ajustes</strong> en el iPhone o iPad.</li>
+            <li>En la parte superior debe aparecer una opcion como <strong>Perfil descargado</strong>. Entra ahi e instala el perfil.</li>
+            <li>Si no aparece <strong>Perfil descargado</strong>, ve a <strong>Ajustes</strong> -> <strong>General</strong> -> <strong>VPN y gestion de dispositivos</strong> o <strong>Perfiles</strong> y abre el perfil descargado desde ahi.</li>
+            <li>Cuando iOS te pida confirmar, instala el certificado. El nombre debe verse como <strong>M1L3 Labs</strong>.</li>
+            <li>Despues ve a <strong>Ajustes</strong> -> <strong>General</strong> -> <strong>Informacion</strong> -> <strong>Ajustes de confianza de certificados</strong>.</li>
+            <li>Activa la confianza total para <strong>M1L3 Labs</strong> y confirma.</li>
+            <li>Vuelve a esta pagina y pulsa <strong>Abrir la app</strong>.</li>
+            <li>Comprueba que estas en la app real. La URL correcta es exactamente <strong>${baseUrl}/</strong>. No te quedes en <strong>/install</strong> ni en <strong>/install.html</strong>.</li>
+            <li>Espera a que la app cargue completa y recargala una vez.</li>
+            <li>En Safari pulsa <strong>Compartir</strong>.</li>
+            <li>Pulsa <strong>Anadir a pantalla de inicio</strong>.</li>
+            <li>Abre la app desde el icono nuevo de la pantalla de inicio.</li>
+            <li>Con red todavia activa, abre la app instalada una vez mas.</li>
+            <li>Despues prueba modo avion y vuelve a abrirla desde el icono.</li>
           </ol>
         </article>
       </section>
@@ -461,7 +500,7 @@ async function handleRequest(request, response) {
     const host = request.headers.host ?? `localhost:${defaultPort}`;
     const baseUrl = `https://${host}`;
 
-    if (requestPath === '/install' || requestPath === '/install/') {
+    if (requestPath === '/install' || requestPath === '/install/' || requestPath === '/install.html') {
       response.writeHead(200, {
         'Content-Type': 'text/html; charset=utf-8',
         'Cache-Control': 'no-cache',
@@ -481,9 +520,9 @@ async function handleRequest(request, response) {
     if (requestPath === '/ca.crt') {
       response.writeHead(200, {
         'Content-Type': 'application/x-x509-ca-cert',
-        'Content-Disposition': 'attachment; filename="catalogo-intranet-server.cer"',
+        'Content-Disposition': 'attachment; filename="M1L3-Labs-CataloGo-Root-CA.cer"',
       });
-      response.end(readFileSync(certificatePath));
+      response.end(readFileSync(rootCertificatePath));
       logRequest(request, response, requestPath, requestKind);
       return;
     }
@@ -560,6 +599,7 @@ export async function startServer({
   const lanIp = lanCandidate.address;
   const networkProfile = getWindowsNetworkProfile(lanCandidate.interfaceName);
   const networkCategory = formatNetworkCategory(networkProfile?.NetworkCategory);
+  const firewallRulePresent = hasWindowsFirewallRule(firewallRuleName);
 
   const hostnames = Array.from(
     new Set(['localhost', '127.0.0.1', lanIp, process.env.COMPUTERNAME].filter(Boolean)),
@@ -602,7 +642,7 @@ export async function startServer({
 
   const urls = {
     app: `https://${lanIp}:${port}/`,
-    install: `https://${lanIp}:${port}/install`,
+    install: `https://${lanIp}:${port}/install.html`,
     certificate: `https://${lanIp}:${port}/ca.crt`,
     redirect: `http://${lanIp}${httpPort === 80 ? '' : `:${httpPort}`}/`,
   };
@@ -625,7 +665,12 @@ export async function startServer({
     }
     if (networkCategory === 'Public') {
       logInfo('Aviso: Windows tiene esta red como Public. El firewall puede bloquear accesos desde otros dispositivos.');
-      logInfo('Ejecuta `npm run intranet:allow-firewall` o cambia la red a perfil Private.');
+      if (firewallRulePresent) {
+        logInfo(`Regla de firewall detectada: '${firewallRuleName}'. No hace falta volver a ejecutar \`npm run intranet:allow-firewall\`.`);
+      }
+      else {
+        logInfo('Ejecuta `npm run intranet:allow-firewall` o cambia la red a perfil Private.');
+      }
     }
     console.log('');
   }
