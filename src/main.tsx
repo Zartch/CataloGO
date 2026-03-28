@@ -1,0 +1,20 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { registerSW } from 'virtual:pwa-register';
+import { App } from './App';
+import './i18n';
+import './index.css';
+import { CatalogProvider } from './presentation/context/CatalogContext';
+
+registerSW({ immediate: true });
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <CatalogProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </CatalogProvider>
+  </React.StrictMode>,
+);

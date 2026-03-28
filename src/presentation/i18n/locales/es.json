@@ -1,0 +1,17 @@
+{
+  "app.name": "CataloGo",
+  "nav.home": "Home",
+  "nav.items": "Items",
+  "nav.categories": "Categorias",
+  "nav.families": "Familias",
+  "nav.collections": "Colecciones",
+  "nav.pdf": "Generar PDF",
+  "nav.settings": "Configuracion",
+  "common.save": "Guardar",
+  "common.cancel": "Cancelar",
+  "common.delete": "Eliminar",
+  "common.edit": "Editar",
+  "common.add": "Anadir",
+  "common.loading": "Cargando",
+  "common.noResults": "Sin resultados"
+}
