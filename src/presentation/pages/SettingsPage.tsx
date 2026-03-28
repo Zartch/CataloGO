@@ -167,10 +167,10 @@ export function SettingsPage() {
         <h2>Import / Export</h2>
         <div className="stack">
           <label>
-            Importar Excel (.xlsx)
+            Importar Excel (.xls, .xlsx)
             <input
               type="file"
-              accept=".xlsx"
+              accept=".xls,.xlsx"
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file) {
