@@ -54,6 +54,8 @@ Otros comandos utiles:
 
 ```bash
 npm run build
+npm run intranet:install
+npm run intranet:serve
 npm run test
 npm run lint
 ```
@@ -94,6 +96,23 @@ Build de produccion:
 - `npm run build`
 - salida en `dist/`
 
+Instalacion por intranet en movil:
+
+- `npm run intranet:install`
+- hace build de produccion y levanta un servidor HTTPS en la LAN
+- publica la app en `/` y una guia de instalacion en `/install`
+- expone el certificado local en `/ca.crt` para que Android/iPhone puedan confiar en la conexion
+- pensado para ejecutarse en un PC Windows conectado a la misma red que los moviles
+
+Notas sobre HTTPS local:
+
+- la PWA requiere contexto seguro para poder instalarse bien en movil
+- el comando genera un certificado HTTPS local para la IP LAN del PC
+- ese certificado se reutiliza en arranques normales
+- solo se regenera si falta, caduca o ya no cubre la IP/host actual
+- cada movil debe confiar ese certificado una vez antes de instalar la app
+- si cambia la IP del PC, usa la nueva URL mostrada en consola
+
 ## Funcionalidad implementada
 
 - Home tipo dashboard con identidad visual de la empresa
@@ -108,6 +127,7 @@ Build de produccion:
 - Exportacion e importacion completa de la base SQLite
 - Generacion de PDF A4 por coleccion
 - Preparacion PWA con manifest y service worker
+- Servicio HTTPS local para instalacion en intranet con guia `/install`
 
 ## Arquitectura
 

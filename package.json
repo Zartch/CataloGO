@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "intranet:serve": "node ./scripts/intranet-server.mjs",
+    "intranet:install": "npm run build && npm run intranet:serve",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run"
