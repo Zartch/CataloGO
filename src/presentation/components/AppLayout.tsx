@@ -6,6 +6,7 @@ import { BinaryImage } from './BinaryImage';
 const NAV_ITEMS = [
   { path: '/', label: 'Home', short: 'HM' },
   { path: '/items', label: 'Items', short: 'IT' },
+  { path: '/items-fotos-yolo', label: 'Items Fotos YOLO', short: 'YO' },
   { path: '/categorias', label: 'Categorias', short: 'CT' },
   { path: '/familias', label: 'Familias', short: 'FM' },
   { path: '/colecciones', label: 'Colecciones', short: 'CL' },
@@ -69,7 +70,7 @@ export function AppLayout() {
             Menu
           </button>
           <div className="topbar-brand">
-            <span className="eyebrow">PWA local</span>
+            <span className="eyebrow">Offline-first catalog</span>
             <strong>{configuracion?.nombreCompania}</strong>
           </div>
         </header>

@@ -8,6 +8,7 @@ function createRepositories(): RepositoryBundle {
       list: vi.fn(),
       getById: vi.fn(),
       getByCodigo: vi.fn().mockResolvedValue(null),
+      getNextWithoutPhoto: vi.fn(),
       save: vi.fn().mockResolvedValue(1),
       delete: vi.fn(),
       addItemsToCollection: vi.fn(),

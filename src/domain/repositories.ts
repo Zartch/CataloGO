@@ -17,6 +17,7 @@ export interface ItemRepository {
   list(query: ItemListQuery): Promise<ItemListResult>;
   getById(id: EntityId): Promise<Item | null>;
   getByCodigo(codigo: string): Promise<Item | null>;
+  getNextWithoutPhoto(excludedIds: EntityId[]): Promise<Item | null>;
   save(command: SaveItemCommand): Promise<EntityId>;
   delete(id: EntityId): Promise<void>;
   addItemsToCollection(collectionId: EntityId, itemIds: EntityId[]): Promise<void>;

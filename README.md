@@ -54,19 +54,13 @@ Otros comandos utiles:
 
 ```bash
 npm run build
-npm run intranet:allow-firewall
-npm run intranet:remove-firewall
-npm run intranet:install
-npm run intranet:serve
+npm run build:github-pages
 npm run test
 npm run lint
 ```
 
 - `npm run build`: genera el build de produccion en `dist/`
-- `npm run intranet:allow-firewall`: crea la regla de Windows Firewall para permitir acceso LAN a `4173` y `80`
-- `npm run intranet:remove-firewall`: elimina esa regla de Windows Firewall
-- `npm run intranet:install`: hace build y arranca el servidor HTTPS de intranet en el mismo proceso
-- `npm run intranet:serve`: arranca solo el servidor HTTPS usando el `dist/` existente
+- `npm run build:github-pages`: genera el build ajustado para GitHub Pages
 - `npm run test`: ejecuta los tests con Vitest
 - `npm run lint`: revisa el codigo con ESLint
 
@@ -106,34 +100,19 @@ Build de produccion:
 - `npm run build`
 - salida en `dist/`
 
-Instalacion por intranet en movil:
+Despliegue en GitHub Pages:
 
-- `npm run intranet:install`
-- hace build de produccion y levanta un servidor HTTPS en la LAN
-- publica la app en `/` y una guia de instalacion en `/install.html`
-- expone la CA local en `/ca.crt` para que Android/iPhone puedan confiar en la conexion
-- intenta levantar tambien un redirector HTTP para enviar `http://...` a `https://...`
-- pensado para ejecutarse en un PC Windows conectado a la misma red que los moviles
-
-Notas sobre HTTPS local:
-
-- la PWA requiere contexto seguro para poder instalarse bien en movil
-- el comando genera una CA local persistente y un certificado HTTPS de servidor firmado por esa CA
-- la CA se reutiliza en arranques normales
-- el certificado de servidor solo se regenera si falta, caduca o ya no cubre la IP/host actual
-- cada movil debe confiar esa CA una vez antes de instalar la app
-- el archivo que debe descargarse en el movil es `catalogo-intranet-root-ca.cer`
-- el nombre visible del certificado debe aparecer como `M1L3 Labs`
-- en Android es normal que Chrome avise de que el certificado debe instalarse desde Ajustes; la instalacion de la CA se hace desde Ajustes, no desde el navegador
-- el puerto no influye en la validez del certificado; lo que debe coincidir es el host o la IP del sitio
-- si en Android se creo un icono mientras el certificado aun no era valido, ese icono sera un acceso directo web normal; hay que borrarlo y volver a instalar la app cuando Chrome ya confie en la URL
-- en iPhone/iPad hay que instalar el perfil desde Ajustes y despues activar la confianza manualmente en `Ajustes -> General -> Informacion -> Ajustes de confianza de certificados`
-- si cambia la IP del PC, usa la nueva URL mostrada en consola
-- si Windows marca la red como `Public`, el servidor mostrara un aviso
-- si la regla de firewall ya existe, el servidor no volvera a pedir `npm run intranet:allow-firewall`
-- para abrir los puertos `4173` y `80` en Windows Firewall: `npm run intranet:allow-firewall`
-- esa regla se limita a `node.exe`, TCP `4173/80` y `LocalSubnet`
-- para quitar la regla manualmente: `npm run intranet:remove-firewall`
+- pensado para usar la app como PWA publica, sin backend y sin certificados locales
+- el repo ya incluye el workflow [deploy-github-pages.yml](/C:/Users/Zartch/pythonProjects/catalog_codex/.github/workflows/deploy-github-pages.yml)
+- el build de Pages usa `HashRouter` para evitar problemas de rutas profundas en GitHub Pages
+- el comando es `npm run build:github-pages`
+- en GitHub, activa `Settings -> Pages -> Build and deployment -> Source: GitHub Actions`
+- despues solo hace falta subir cambios a `main`
+- GitHub publicara la app con HTTPS en `https://<usuario>.github.io/<repo>/`
+- si el repo se llama exactamente `<usuario>.github.io`, la app quedara en la raiz `https://<usuario>.github.io/`
+- ese caso es el mas simple para PWA porque evita una subruta adicional
+- la app seguira funcionando sin backend
+- los datos seguiran siendo locales en cada dispositivo, no compartidos entre moviles
 
 ## Funcionalidad implementada
 
@@ -149,7 +128,6 @@ Notas sobre HTTPS local:
 - Exportacion e importacion completa de la base SQLite
 - Generacion de PDF A4 por coleccion
 - Preparacion PWA con manifest y service worker
-- Servicio HTTPS local para instalacion en intranet con guia `/install`
 
 ## Arquitectura
 
@@ -259,3 +237,4 @@ Nota:
 
 - [Plan v1.1](C:\Users\Zartch\pythonProjects\catalog_codex\docs\plan-catalogo-v1.1.md)
 - [Referencia rapida](C:\Users\Zartch\pythonProjects\catalog_codex\docs\quick-reference.md)
+- [Publicar en GitHub Pages](C:\Users\Zartch\pythonProjects\catalog_codex\docs\publicar-en-github-pages.md)

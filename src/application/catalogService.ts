@@ -38,6 +38,10 @@ export class CatalogService {
     return this.repositories.items.getById(id);
   }
 
+  async getNextItemWithoutPhoto(excludedIds: EntityId[] = []) {
+    return this.repositories.items.getNextWithoutPhoto(excludedIds);
+  }
+
   async saveItem(command: SaveItemCommand) {
     assertRequired(command.codigo, 'codigo');
     assertRequired(command.nombre, 'nombre');

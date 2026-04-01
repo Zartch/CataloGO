@@ -36,6 +36,11 @@ const SettingsPage = lazy(() =>
     default: module.SettingsPage,
   })),
 );
+const ItemsFotosYoloPage = lazy(() =>
+  import('./presentation/pages/ItemsFotosYoloPage').then((module) => ({
+    default: module.ItemsFotosYoloPage,
+  })),
+);
 
 export function App() {
   return (
@@ -44,6 +49,7 @@ export function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/items" element={<ItemsPage />} />
+          <Route path="/items-fotos-yolo" element={<ItemsFotosYoloPage />} />
           <Route path="/items/nuevo" element={<ItemFormPage />} />
           <Route path="/items/:id" element={<ItemFormPage />} />
           <Route

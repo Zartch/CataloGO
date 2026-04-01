@@ -5,6 +5,7 @@ import { BinaryImage } from '../components/BinaryImage';
 
 const HOME_CARDS = [
   { path: '/items', title: 'Items', description: 'Inventario visual', icon: 'IT' },
+  { path: '/items-fotos-yolo', title: 'Items Fotos YOLO', description: 'Captura rapida de fotos pendientes', icon: 'YO' },
   { path: '/categorias', title: 'Categorias', description: 'Clasificacion base', icon: 'CT' },
   { path: '/familias', title: 'Familias', description: 'Agrupacion principal', icon: 'FM' },
   { path: '/colecciones', title: 'Colecciones', description: 'Seleccion para catalogo', icon: 'CL' },

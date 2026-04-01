@@ -59,9 +59,14 @@ export function ItemsPage() {
           <p className="eyebrow">Inventario</p>
           <h1>Items</h1>
         </div>
-        <button type="button" className="primary-button" onClick={() => navigate('/items/nuevo')}>
-          Nuevo item
-        </button>
+        <div className="action-row">
+          <button type="button" className="secondary-button" onClick={() => navigate('/items-fotos-yolo')}>
+            Fotos YOLO
+          </button>
+          <button type="button" className="primary-button" onClick={() => navigate('/items/nuevo')}>
+            Nuevo item
+          </button>
+        </div>
       </section>
 
       <ItemFilterPanel

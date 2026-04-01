@@ -6,10 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "intranet:allow-firewall": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/open-firewall.ps1 -PortsCsv 4173,80",
-    "intranet:remove-firewall": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/open-firewall.ps1 -Action Close -PortsCsv 4173,80",
-    "intranet:serve": "node ./scripts/intranet-server.mjs",
-    "intranet:install": "tsc -b && vite build && node ./scripts/intranet-server.mjs",
+    "build:github-pages": "node ./scripts/build-github-pages.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run"

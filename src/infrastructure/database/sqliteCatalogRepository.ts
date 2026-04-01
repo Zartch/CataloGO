@@ -547,6 +547,38 @@ class SqliteItemRepository implements ItemRepository {
     });
   }
 
+  async getNextWithoutPhoto(excludedIds: EntityId[]) {
+    return this.port.withDatabase(async (db) => {
+      const filteredIds = excludedIds
+        .map((value) => Number(value))
+        .filter((value) => Number.isInteger(value) && value > 0);
+
+      const exclusionClause = filteredIds.length > 0
+        ? `AND i.id NOT IN (${filteredIds.map(() => '?').join(', ')})`
+        : '';
+
+      const row = rowsFromResult<{ id: number }>(
+        db.exec(
+          `
+            SELECT i.id
+            FROM items i
+            WHERE i.fotografia IS NULL
+              ${exclusionClause}
+            ORDER BY i.id ASC
+            LIMIT 1
+          `,
+          filteredIds,
+        ),
+      )[0];
+
+      if (!row) {
+        return null;
+      }
+
+      return this.getById(Number(row.id));
+    });
+  }
+
   async save(command: SaveItemCommand) {
     return this.port.withTransaction((db) => {
       if (command.id) {
