@@ -1,241 +1,87 @@
 # CataloGo
 
-PWA para control de inventario sencillo y generacion de catalogos PDF A4, ejecutada 100% en local y sin backend.
+CataloGo es una app web instalable para llevar inventario visual, organizar items por categorias, familias y colecciones, y generar catalogos PDF sin backend.
 
-## Objetivo
+La app esta pensada para usarse ya publicada en GitHub Pages o en otra URL publica con HTTPS.
 
-CataloGo esta pensada para trabajar desde navegador en movil, tablet o escritorio, con foco en:
+## Que hace
 
-- inventario visual con fotografia protagonista
-- gestion local de items, categorias, familias y colecciones
-- exportacion de catalogos PDF por coleccion
-- funcionamiento offline tras la primera carga
-- importacion y exportacion de datos sin servicios externos
+- guardar items con codigo, nombre, precio, descripcion y foto
+- organizar items por categorias, familias y colecciones
+- capturar fotos rapido con `Items Fotos YOLO`
+- generar catalogos PDF A4 por coleccion
+- importar items desde Excel
+- exportar e importar la base completa
+- funcionar offline despues de la primera carga
 
-## Stack
+## Como usarla
 
-- React 19 + Vite + TypeScript
-- React Router para navegacion SPA
-- SQLite WASM con `sql.js`
-- Persistencia del binario SQLite en `IndexedDB`
-- `pdf-lib` para generacion de PDF cliente
-- `xlsx` para importacion de Excel
-- `vite-plugin-pwa` para manifest y service worker
-- i18n preparado con `react-i18next`
+1. Abre la URL publicada de la app.
+2. Espera a que cargue completamente la primera vez.
+3. Si quieres instalarla como app:
+   - en Android Chrome: `Instalar app` o `Anadir a pantalla de inicio`
+   - en iPhone Safari: `Compartir -> Anadir a pantalla de inicio`
+4. Empieza creando o importando tus items.
 
-## Puesta en marcha
+## Uso rapido
 
-Requisitos:
+### Home
 
-- Node.js 22+
-- npm 10+
+Desde la pantalla principal puedes entrar a las secciones clave de la app.
 
-Instalacion:
+### Items
 
-```bash
-npm install
-```
+Aqui puedes:
 
-Ejecucion recomendada en Windows:
+- crear items nuevos
+- editar items existentes
+- subir o cambiar su fotografia
+- filtrar y ordenar el listado
 
-```bash
-npm.cmd run dev
-```
+### Items Fotos YOLO
 
-Esto levanta el servidor de desarrollo de Vite y muestra una URL local para abrir la app en el navegador.
+Pensado para fotografiar muchos items seguidos:
 
-Ejecucion habitual en otros shells:
+1. La pantalla muestra el siguiente item sin foto.
+2. Haz la foto o elige una desde galeria.
+3. Revisa la imagen.
+4. Pulsa `OK` para guardarla y pasar al siguiente item.
+5. Pulsa `KO` si quieres repetir o reseleccionar.
+6. Si no quieres fotografiar ese item ahora, usa `Skip`.
 
-```bash
-npm run dev
-```
+### Categorias, Familias y Colecciones
 
-Otros comandos utiles:
+Sirven para clasificar mejor el inventario y luego generar catalogos mas ordenados.
 
-```bash
-npm run build
-npm run build:github-pages
-npm run test
-npm run lint
-```
+### Generar PDF
 
-- `npm run build`: genera el build de produccion en `dist/`
-- `npm run build:github-pages`: genera el build ajustado para GitHub Pages
-- `npm run test`: ejecuta los tests con Vitest
-- `npm run lint`: revisa el codigo con ESLint
+Permite crear un catalogo A4 por coleccion directamente desde la app.
 
-Servidor de desarrollo:
+### Configuracion
 
-- comando recomendado en PowerShell de Windows: `npm.cmd run dev`
-- comando habitual en `cmd`, Git Bash u otros entornos: `npm run dev`
-- abre la URL mostrada por Vite
+Aqui puedes:
 
-### Nota importante sobre PowerShell en Windows
+- cambiar nombre y datos de la empresa
+- ajustar colores
+- importar desde Excel
+- exportar una copia completa de la base
+- restaurar una copia anterior
 
-Si `npm run dev` falla con un error parecido a:
+## Funcionamiento offline
 
-`npm.ps1` / `la ejecucion de scripts esta deshabilitada en este sistema`
+- la app necesita una primera carga con internet
+- despues puede seguir funcionando offline
+- cada dispositivo guarda sus propios datos localmente
+- los datos no se sincronizan entre movil, tablet y PC
 
-el problema no es del proyecto. PowerShell esta bloqueando la ejecucion de `npm.ps1`.
+## Recomendaciones
 
-Opciones para arrancar la app:
+- despues de cargar la app por primera vez, abrela una segunda vez para asegurar la cache offline
+- exporta la base de datos de vez en cuando como copia de seguridad
+- si cambias de dispositivo, importa la copia exportada en el nuevo
 
-- usar directamente `npm.cmd run dev`
-- abrir el proyecto desde `cmd` en lugar de PowerShell
-- permitir scripts solo en la sesion actual y despues ejecutar `npm run dev`:
+## Soporte tecnico
 
-```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-npm run dev
-```
+La documentacion tecnica esta en:
 
-- permitirlo para tu usuario y despues volver a abrir la terminal:
-
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-```
-
-Build de produccion:
-
-- `npm run build`
-- salida en `dist/`
-
-Despliegue en GitHub Pages:
-
-- pensado para usar la app como PWA publica, sin backend y sin certificados locales
-- el repo ya incluye el workflow [deploy-github-pages.yml](/C:/Users/Zartch/pythonProjects/catalog_codex/.github/workflows/deploy-github-pages.yml)
-- el build de Pages usa `HashRouter` para evitar problemas de rutas profundas en GitHub Pages
-- el comando es `npm run build:github-pages`
-- en GitHub, activa `Settings -> Pages -> Build and deployment -> Source: GitHub Actions`
-- despues solo hace falta subir cambios a `main`
-- si el primer workflow falla con `Get Pages site failed`, vuelve a `Settings -> Pages`, confirma `GitHub Actions` y reintenta el workflow
-- GitHub publicara la app con HTTPS en `https://<usuario>.github.io/<repo>/`
-- si el repo se llama exactamente `<usuario>.github.io`, la app quedara en la raiz `https://<usuario>.github.io/`
-- ese caso es el mas simple para PWA porque evita una subruta adicional
-- la app seguira funcionando sin backend
-- los datos seguiran siendo locales en cada dispositivo, no compartidos entre moviles
-
-## Funcionalidad implementada
-
-- Home tipo dashboard con identidad visual de la empresa
-- Drawer global con navegacion principal
-- CRUD de items en pagina dedicada
-- CRUD de categorias, familias y colecciones
-- Relacion N:M item-coleccion
-- Filtros colapsables y paginacion de 200 items
-- Configuracion singleton con colores dinamicos
-- Captura/seleccion de imagen y compresion automatica
-- Importacion Excel con reporte de errores por fila
-- Exportacion e importacion completa de la base SQLite
-- Generacion de PDF A4 por coleccion
-- Preparacion PWA con manifest y service worker
-
-## Arquitectura
-
-La aplicacion sigue una separacion por capas:
-
-- `src/domain`
-  - entidades de negocio
-  - contratos de repositorio
-- `src/application`
-  - DTOs
-  - casos de uso a traves de `CatalogService`
-- `src/infrastructure`
-  - SQLite WASM y esquema
-  - repositorios concretos
-  - servicios de imagen, Excel y PDF
-- `src/presentation`
-  - contexto React
-  - componentes reutilizables
-  - paginas y navegacion
-  - traducciones
-
-## Persistencia local
-
-- La base se define en `src/infrastructure/database/schema.ts`
-- El acceso principal esta en `src/infrastructure/database/sqliteCatalogRepository.ts`
-- SQLite se serializa y guarda en `IndexedDB`
-- No existe backend ni sincronizacion remota
-
-Entidades persistidas:
-
-- `items`
-- `categorias`
-- `familias`
-- `colecciones`
-- `coleccion_item`
-- `configuracion`
-
-Reglas clave:
-
-- `codigo` de item es unico
-- `categoria_id` y `familia_id` usan `ON DELETE SET NULL`
-- `coleccion_item` usa `ON DELETE CASCADE`
-- `configuracion` es singleton con `id = 1`
-
-## Navegacion actual
-
-Rutas principales:
-
-- `/`
-- `/items`
-- `/items/nuevo`
-- `/items/:id`
-- `/categorias`
-- `/familias`
-- `/colecciones`
-- `/colecciones/:id`
-- `/generar-pdf`
-- `/configuracion`
-
-## PDF
-
-La generacion de PDF:
-
-- se ejecuta 100% en cliente
-- exporta una coleccion completa
-- usa portada con identidad de empresa
-- agrupa items por familia y categoria
-- envia items sin clasificacion al final
-- incluye paginacion y logo en pie de pagina de contenido
-
-## Import / Export
-
-Importacion Excel:
-
-- columnas esperadas: `codigo`, `nombre`, `precio`, `unidad_medida`, `descripcion`, `categoria`, `familia`, `coleccion`
-- upsert por `codigo`
-- crea automaticamente categorias, familias y colecciones no existentes
-- conserva filas validas aunque otras fallen
-
-Base de datos:
-
-- exportacion completa a `.sqlite`
-- importacion destructiva de `.sqlite` con confirmacion
-
-## Optimizacion de carga
-
-Se redujo el bundle inicial mediante:
-
-- carga diferida de paginas con `React.lazy`
-- import dinamico de SQLite, Excel y PDF
-
-Esto deja el codigo pesado fuera del chunk inicial y mejora la carga base de la app.
-
-## Verificacion actual
-
-Ultimo estado validado:
-
-- `npm run lint`: OK
-- `npm run test`: OK
-- `npm run build`: OK
-
-Nota:
-
-- el build sigue incluyendo assets pesados en chunks diferidos por `sql.js`, `xlsx` y `pdf-lib`, lo cual es esperable en una app 100% cliente
-
-## Documentacion del repo
-
-- [Plan v1.1](C:\Users\Zartch\pythonProjects\catalog_codex\docs\plan-catalogo-v1.1.md)
-- [Referencia rapida](C:\Users\Zartch\pythonProjects\catalog_codex\docs\quick-reference.md)
-- [Publicar en GitHub Pages](C:\Users\Zartch\pythonProjects\catalog_codex\docs\publicar-en-github-pages.md)
+- [README tecnico](docs/readme-tecnico.md)

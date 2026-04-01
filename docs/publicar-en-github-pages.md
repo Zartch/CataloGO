@@ -33,7 +33,7 @@ Si ya esta en GitHub:
 
 Este proyecto ya incluye el workflow:
 
-- [.github/workflows/deploy-github-pages.yml](/C:/Users/Zartch/pythonProjects/catalog_codex/.github/workflows/deploy-github-pages.yml)
+- [.github/workflows/deploy-github-pages.yml](../.github/workflows/deploy-github-pages.yml)
 
 No hace falta crear otro salvo que quieras cambiar el proceso.
 
@@ -75,7 +75,7 @@ git push origin main
 
 Cuando el push llegue:
 
-1. GitHub ejecutara el workflow automáticamente.
+1. GitHub ejecutara el workflow automaticamente.
 2. El build publicara la carpeta `dist`.
 3. Al terminar, GitHub Pages quedara actualizado.
 
@@ -118,8 +118,8 @@ Una vez publicada:
 2. Espera a que cargue completa.
 3. Recarga una vez.
 4. Instalala desde el navegador:
-   - Android Chrome: `Instalar app` o `Añadir a pantalla de inicio`
-   - iPhone Safari: `Compartir -> Añadir a pantalla de inicio`
+   - Android Chrome: `Instalar app` o `Anadir a pantalla de inicio`
+   - iPhone Safari: `Compartir -> Anadir a pantalla de inicio`
 
 ## Comandos utiles en local
 
@@ -143,7 +143,7 @@ npm run build:github-pages
 
 ### La app abre pero no instala como PWA
 
-- asegúrate de abrir la URL publicada por `github.io`
+- asegurate de abrir la URL publicada por `github.io`
 - recarga una vez antes de instalar
 - prueba desde Chrome en Android o Safari en iPhone
 
