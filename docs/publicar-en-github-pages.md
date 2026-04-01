@@ -48,6 +48,19 @@ En GitHub:
 
 Con eso GitHub ya queda preparado para publicar usando el workflow del repo.
 
+Si el primer workflow falla con un error parecido a:
+
+```text
+Get Pages site failed
+HttpError: Not Found
+```
+
+normalmente significa que GitHub todavia no ha terminado de dejar Pages habilitado para ese repo. En ese caso:
+
+1. Vuelve a `Settings -> Pages`.
+2. Comprueba otra vez que `Source` sigue en `GitHub Actions`.
+3. Espera unos segundos y vuelve a lanzar el workflow desde `Actions`, o haz otro push a `main`.
+
 ## Paso 4. Lanzar el despliegue
 
 Haz push a `main`.
@@ -73,6 +86,11 @@ En GitHub:
 1. Entra en `Actions`.
 2. Abre la ultima ejecucion de `Deploy GitHub Pages`.
 3. Comprueba que todos los pasos salen en verde.
+
+Nota:
+
+- el warning sobre acciones antiguas de Node 20 no es el error principal
+- el workflow del repo ya usa versiones recientes de `checkout`, `setup-node` y `upload-pages-artifact`
 
 Tambien puedes volver a `Settings -> Pages` y ver la URL publicada.
 

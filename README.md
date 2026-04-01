@@ -108,6 +108,7 @@ Despliegue en GitHub Pages:
 - el comando es `npm run build:github-pages`
 - en GitHub, activa `Settings -> Pages -> Build and deployment -> Source: GitHub Actions`
 - despues solo hace falta subir cambios a `main`
+- si el primer workflow falla con `Get Pages site failed`, vuelve a `Settings -> Pages`, confirma `GitHub Actions` y reintenta el workflow
 - GitHub publicara la app con HTTPS en `https://<usuario>.github.io/<repo>/`
 - si el repo se llama exactamente `<usuario>.github.io`, la app quedara en la raiz `https://<usuario>.github.io/`
 - ese caso es el mas simple para PWA porque evita una subruta adicional
