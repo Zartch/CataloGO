@@ -62,6 +62,7 @@ export class CatalogService {
       nombre: command.nombre.trim(),
       unidadMedida: command.unidadMedida.trim(),
       descripcion: command.descripcion?.trim() || null,
+      categoryIds: [...new Set(command.categoryIds)],
     });
   }
 
@@ -73,9 +74,12 @@ export class CatalogService {
     return this.repositories.categorias.list();
   }
 
-  async saveCategoria(entity: Partial<NamedEntity> & { nombre: string }) {
+  async saveCategoria(entity: { id?: EntityId; nombre: string; familiaId: EntityId }) {
     assertRequired(entity.nombre, 'nombre');
-    return this.repositories.categorias.save({ ...entity, nombre: entity.nombre.trim() });
+    return this.repositories.categorias.save({
+      ...entity,
+      nombre: entity.nombre.trim(),
+    });
   }
 
   async deleteCategoria(id: EntityId) {
@@ -86,6 +90,14 @@ export class CatalogService {
     return this.repositories.familias.list();
   }
 
+  async listFamiliasConCategorias() {
+    return this.repositories.familias.listWithCategorias();
+  }
+
+  async listFamiliasDeColeccion(coleccionId: EntityId) {
+    return this.repositories.familias.listForCollection(coleccionId);
+  }
+
   async saveFamilia(entity: Partial<NamedEntity> & { nombre: string }) {
     assertRequired(entity.nombre, 'nombre');
     return this.repositories.familias.save({ ...entity, nombre: entity.nombre.trim() });
@@ -93,6 +105,10 @@ export class CatalogService {
 
   async deleteFamilia(id: EntityId) {
     await this.repositories.familias.delete(id);
+  }
+
+  async moveCategoria(id: EntityId, familiaId: EntityId, targetIndex: number) {
+    await this.repositories.categorias.move(id, familiaId, targetIndex);
   }
 
   async listColecciones() {
@@ -154,11 +170,11 @@ export class CatalogService {
     for (const row of parsedRows.rows) {
       try {
         const existing = await this.repositories.items.getByCodigo(row.codigo);
-        const categoriaId = row.categoria
-          ? await this.repositories.importSupport.ensureCategoria(row.categoria)
-          : null;
         const familiaId = row.familia
           ? await this.repositories.importSupport.ensureFamilia(row.familia)
+          : null;
+        const categoriaId = row.categoria && familiaId
+          ? await this.repositories.importSupport.ensureCategoria(row.categoria, familiaId)
           : null;
         const coleccionId = row.coleccion
           ? await this.repositories.importSupport.ensureColeccion(row.coleccion)
@@ -178,6 +194,10 @@ export class CatalogService {
         if (coleccionId && !currentCollectionIds.includes(coleccionId)) {
           currentCollectionIds.push(coleccionId);
         }
+        const currentCategoryIds = existing?.categorias.map((categoria) => categoria.id) ?? [];
+        if (categoriaId && !currentCategoryIds.includes(categoriaId)) {
+          currentCategoryIds.push(categoriaId);
+        }
 
         await this.saveItem({
           id: existing?.id,
@@ -186,10 +206,9 @@ export class CatalogService {
           precio: row.precio,
           unidadMedida: row.unidadMedida,
           descripcion: row.descripcion,
-          categoriaId,
-          familiaId,
           fotografia: existing?.fotografia ?? null,
           fotografiaMime: existing?.fotografiaMime ?? null,
+          categoryIds: currentCategoryIds,
           collectionIds: currentCollectionIds,
         });
 
@@ -240,12 +259,17 @@ export class CatalogService {
         pageSize: 1000,
       })
     ).items;
+    const filteredItems = command.familiaIds.length > 0
+      ? items.filter((item) =>
+          item.categorias.some((categoria) => command.familiaIds.includes(categoria.familiaId)),
+        )
+      : items;
 
     const configuracion = await this.repositories.configuracion.get();
     return this.pdfService.generate({
       coleccion,
       configuracion,
-      items,
+      items: filteredItems,
       options: command,
     });
   }

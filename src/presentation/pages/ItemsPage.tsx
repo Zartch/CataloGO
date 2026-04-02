@@ -6,6 +6,7 @@ import { ItemFilterPanel } from '../components/ItemFilterPanel';
 import { Pagination } from '../components/Pagination';
 import { useCatalog } from '../context/CatalogContext';
 import { useAsyncResource } from '../hooks/useAsyncResource';
+import { formatItemCategorySummary } from '../utils/itemTaxonomy';
 
 const DEFAULT_QUERY: ItemListQuery = {
   page: 1,
@@ -102,9 +103,7 @@ export function ItemsPage() {
                 <p className="muted">{item.codigo}</p>
                 <strong>{formatter.format(item.precio)}</strong>
                 <p>{item.unidadMedida}</p>
-                <p className="muted">
-                  {[item.familiaNombre, item.categoriaNombre].filter(Boolean).join(' · ') || 'Sin clasificacion'}
-                </p>
+                <p className="muted">{formatItemCategorySummary(item)}</p>
                 <p className="muted">
                   {item.colecciones.length > 0
                     ? item.colecciones.map((coleccion) => coleccion.nombre).join(', ')

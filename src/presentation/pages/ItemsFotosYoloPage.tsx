@@ -5,6 +5,7 @@ import type { SaveItemCommand } from '../../application/dto';
 import { BinaryImage } from '../components/BinaryImage';
 import { useCatalog } from '../context/CatalogContext';
 import { useAsyncResource } from '../hooks/useAsyncResource';
+import { formatItemCategorySummary } from '../utils/itemTaxonomy';
 
 type ReviewState = 'idle' | 'review' | 'retry';
 
@@ -16,10 +17,9 @@ function toSaveItemCommand(item: Item, photo: BinaryImageValue): SaveItemCommand
     precio: item.precio,
     unidadMedida: item.unidadMedida,
     descripcion: item.descripcion,
-    categoriaId: item.categoriaId,
-    familiaId: item.familiaId,
     fotografia: photo.bytes,
     fotografiaMime: photo.mime,
+    categoryIds: item.categorias.map((categoria) => categoria.id),
     collectionIds: item.colecciones.map((collection) => collection.id),
   };
 }
@@ -41,8 +41,8 @@ export function ItemsFotosYoloPage() {
 
   const currentItem = currentItemResource.data;
   const familyAndCategory = useMemo(
-    () => [currentItem?.familiaNombre, currentItem?.categoriaNombre].filter(Boolean).join(' · '),
-    [currentItem?.categoriaNombre, currentItem?.familiaNombre],
+    () => (currentItem ? formatItemCategorySummary(currentItem) : ''),
+    [currentItem],
   );
 
   function resetPhotoReview() {
@@ -168,7 +168,7 @@ export function ItemsFotosYoloPage() {
               <div className="stack">
                 <p className="muted">Codigo: {currentItem.codigo}</p>
                 <p className="muted">Unidad: {currentItem.unidadMedida}</p>
-                <p className="muted">{familyAndCategory || 'Sin clasificacion'}</p>
+                <p className="muted">{familyAndCategory}</p>
                 <p className="muted">
                   {currentItem.colecciones.length > 0
                     ? currentItem.colecciones.map((collection) => collection.nombre).join(', ')

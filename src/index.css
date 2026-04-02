@@ -643,6 +643,119 @@ textarea {
   border-radius: 10px;
 }
 
+.taxonomy-selector-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.taxonomy-selection-summary {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.category-checkbox-list {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem;
+  border: 1px solid rgba(41, 22, 8, 0.12);
+  border-radius: 12px;
+}
+
+.taxonomy-family-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.taxonomy-family-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(41, 22, 8, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.taxonomy-family-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.taxonomy-family-head h2 {
+  margin: 0 0 0.2rem;
+}
+
+.taxonomy-category-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.taxonomy-category-row,
+.taxonomy-dropzone {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(41, 22, 8, 0.12);
+  background: rgba(246, 239, 231, 0.45);
+}
+
+.taxonomy-category-main {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 1;
+}
+
+.taxonomy-category-main input {
+  width: 100%;
+}
+
+.taxonomy-inline-form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.taxonomy-inline-form input {
+  flex: 1;
+}
+
+.taxonomy-dropzone {
+  justify-content: center;
+  color: var(--color-muted);
+  border-style: dashed;
+}
+
+.taxonomy-drop-target {
+  border-color: var(--color-primary);
+  background: rgba(159, 59, 48, 0.08);
+}
+
+.drag-handle {
+  font-weight: 700;
+  color: var(--color-muted);
+  cursor: grab;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag-chip {
+  border: 1px solid rgba(159, 59, 48, 0.18);
+  background: rgba(159, 59, 48, 0.08);
+  color: inherit;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+}
+
 .muted {
   color: var(--color-muted);
 }

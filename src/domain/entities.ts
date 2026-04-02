@@ -7,6 +7,16 @@ export interface NamedEntity {
 
 export type CollectionLink = NamedEntity;
 
+export interface Categoria extends NamedEntity {
+  familiaId: EntityId;
+  familiaNombre: string;
+  sortOrder: number;
+}
+
+export interface Familia extends NamedEntity {
+  categorias: Categoria[];
+}
+
 export interface Item {
   id: EntityId;
   codigo: string;
@@ -14,12 +24,9 @@ export interface Item {
   precio: number;
   unidadMedida: string;
   descripcion: string | null;
-  categoriaId: EntityId | null;
-  categoriaNombre: string | null;
-  familiaId: EntityId | null;
-  familiaNombre: string | null;
   fotografia: Uint8Array | null;
   fotografiaMime: string | null;
+  categorias: Categoria[];
   colecciones: CollectionLink[];
 }
 

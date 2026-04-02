@@ -1,4 +1,12 @@
-import type { CollectionLink, Configuracion, EntityId, Item, NamedEntity } from '../domain/entities';
+import type {
+  Categoria,
+  CollectionLink,
+  Configuracion,
+  EntityId,
+  Familia,
+  Item,
+  NamedEntity,
+} from '../domain/entities';
 
 export type ItemSortField =
   | 'nombre'
@@ -35,10 +43,9 @@ export interface SaveItemCommand {
   precio: number;
   unidadMedida: string;
   descripcion: string | null;
-  categoriaId: EntityId | null;
-  familiaId: EntityId | null;
   fotografia: Uint8Array | null;
   fotografiaMime: string | null;
+  categoryIds: EntityId[];
   collectionIds: EntityId[];
 }
 
@@ -50,6 +57,7 @@ export interface DashboardCard {
 
 export interface GeneratePdfCommand {
   coleccionId: EntityId;
+  familiaIds: EntityId[];
   mostrarPrecioUnidad: boolean;
   mostrarDescripcion: boolean;
   mostrarSubtitulo: boolean;
@@ -92,7 +100,7 @@ export interface ImportExcelResult {
 export interface ItemFormState {
   command: SaveItemCommand;
   currentItem: Item | null;
-  categorias: NamedEntity[];
-  familias: NamedEntity[];
+  categorias: Categoria[];
+  familias: Familia[];
   colecciones: CollectionLink[];
 }

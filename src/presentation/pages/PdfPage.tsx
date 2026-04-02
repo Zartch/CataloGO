@@ -14,6 +14,7 @@ function downloadBytes(filename: string, bytes: Uint8Array, mime: string) {
 export function PdfPage() {
   const { service, dataVersion } = useCatalog();
   const [coleccionId, setColeccionId] = useState<number | null>(null);
+  const [familiaIds, setFamiliaIds] = useState<number[]>([]);
   const [mostrarPrecioUnidad, setMostrarPrecioUnidad] = useState(true);
   const [mostrarDescripcion, setMostrarDescripcion] = useState(true);
   const [mostrarSubtitulo, setMostrarSubtitulo] = useState(true);
@@ -25,6 +26,10 @@ export function PdfPage() {
     async () => (service ? service.listColecciones() : []),
     [service, dataVersion],
   );
+  const families = useAsyncResource(
+    async () => (service && coleccionId ? service.listFamiliasDeColeccion(coleccionId) : []),
+    [service, dataVersion, coleccionId],
+  );
 
   async function handleGenerate() {
     if (!service || !coleccionId) {
@@ -35,6 +40,7 @@ export function PdfPage() {
     try {
       const bytes = await service.generatePdf({
         coleccionId,
+        familiaIds,
         mostrarPrecioUnidad,
         mostrarDescripcion,
         mostrarSubtitulo,
@@ -61,7 +67,13 @@ export function PdfPage() {
       <section className="form-panel">
         <label>
           Coleccion a exportar
-          <select value={coleccionId ?? ''} onChange={(event) => setColeccionId(Number(event.target.value) || null)}>
+          <select
+            value={coleccionId ?? ''}
+            onChange={(event) => {
+              setColeccionId(Number(event.target.value) || null);
+              setFamiliaIds([]);
+            }}
+          >
             <option value="">Seleccionar coleccion</option>
             {collections.data?.map((collection) => (
               <option key={collection.id} value={collection.id}>
@@ -70,6 +82,34 @@ export function PdfPage() {
             ))}
           </select>
         </label>
+
+        <fieldset className="checkbox-grid">
+          <legend>Familias a imprimir</legend>
+          {coleccionId ? (
+            families.data && families.data.length > 0 ? (
+              families.data.map((familia) => (
+                <label key={familia.id} className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={familiaIds.includes(familia.id)}
+                    onChange={(event) =>
+                      setFamiliaIds((current) =>
+                        event.target.checked
+                          ? [...current, familia.id]
+                          : current.filter((idValue) => idValue !== familia.id),
+                      )
+                    }
+                  />
+                  {familia.nombre}
+                </label>
+              ))
+            ) : (
+              <p className="muted">La coleccion no tiene familias clasificadas. Se imprimiran todos los items.</p>
+            )
+          ) : (
+            <p className="muted">Selecciona una coleccion para filtrar por familias.</p>
+          )}
+        </fieldset>
 
         <fieldset className="checkbox-grid">
           <legend>Opciones del catalogo</legend>

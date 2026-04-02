@@ -12,10 +12,9 @@ const EMPTY_COMMAND: SaveItemCommand = {
   precio: 0,
   unidadMedida: '',
   descripcion: '',
-  categoriaId: null,
-  familiaId: null,
   fotografia: null,
   fotografiaMime: null,
+  categoryIds: [],
   collectionIds: [],
 };
 
@@ -24,6 +23,7 @@ export function ItemFormPage() {
   const navigate = useNavigate();
   const { service, dataVersion, refreshAll } = useCatalog();
   const [command, setCommand] = useState<SaveItemCommand>(EMPTY_COMMAND);
+  const [familyFilterId, setFamilyFilterId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const isEdit = Boolean(id);
@@ -37,7 +37,7 @@ export function ItemFormPage() {
       }
       const [categorias, familias, colecciones, item] = await Promise.all([
         service.listCategorias(),
-        service.listFamilias(),
+        service.listFamiliasConCategorias(),
         service.listColeccionesFlat(),
         id ? service.getItem(Number(id)) : Promise.resolve(null),
       ]);
@@ -58,18 +58,33 @@ export function ItemFormPage() {
         precio: resource.data.item.precio,
         unidadMedida: resource.data.item.unidadMedida,
         descripcion: resource.data.item.descripcion ?? '',
-        categoriaId: resource.data.item.categoriaId,
-        familiaId: resource.data.item.familiaId,
         fotografia: resource.data.item.fotografia,
         fotografiaMime: resource.data.item.fotografiaMime,
+        categoryIds: resource.data.item.categorias.map((categoria) => categoria.id),
         collectionIds: resource.data.item.colecciones.map((coleccion) => coleccion.id),
       });
+      setFamilyFilterId(resource.data.item.categorias[0]?.familiaId ?? null);
       return;
     }
     setCommand(EMPTY_COMMAND);
+    setFamilyFilterId(null);
   }, [resource.data]);
 
   const selectedCollections = useMemo(() => new Set(command.collectionIds), [command.collectionIds]);
+  const selectedCategoryIds = useMemo(() => new Set(command.categoryIds), [command.categoryIds]);
+  const visibleCategories = useMemo(() => {
+    if (!resource.data) {
+      return [];
+    }
+    if (!familyFilterId) {
+      return resource.data.categorias;
+    }
+    return resource.data.categorias.filter((categoria) => categoria.familiaId === familyFilterId);
+  }, [familyFilterId, resource.data]);
+  const selectedCategories = useMemo(
+    () => resource.data?.categorias.filter((categoria) => selectedCategoryIds.has(categoria.id)) ?? [],
+    [resource.data?.categorias, selectedCategoryIds],
+  );
 
   async function handlePhotoSelection(file?: File) {
     if (!file) {
@@ -113,6 +128,15 @@ export function ItemFormPage() {
     navigate('/items');
   }
 
+  function toggleCategory(categoryId: number, checked: boolean) {
+    setCommand((current) => ({
+      ...current,
+      categoryIds: checked
+        ? [...current.categoryIds, categoryId]
+        : current.categoryIds.filter((idValue) => idValue !== categoryId),
+    }));
+  }
+
   return (
     <div className="stack-large">
       <section className="section-heading">
@@ -154,37 +178,16 @@ export function ItemFormPage() {
               onChange={(event) => setCommand((current) => ({ ...current, unidadMedida: event.target.value }))}
             />
           </label>
+        </div>
+
+        <div className="taxonomy-selector-panel">
           <label>
-            Categoria
+            Filtrar categorias por familia
             <select
-              value={command.categoriaId ?? ''}
-              onChange={(event) =>
-                setCommand((current) => ({
-                  ...current,
-                  categoriaId: event.target.value ? Number(event.target.value) : null,
-                }))
-              }
+              value={familyFilterId ?? ''}
+              onChange={(event) => setFamilyFilterId(event.target.value ? Number(event.target.value) : null)}
             >
-              <option value="">Sin categoria</option>
-              {resource.data?.categorias.map((categoria) => (
-                <option key={categoria.id} value={categoria.id}>
-                  {categoria.nombre}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Familia
-            <select
-              value={command.familiaId ?? ''}
-              onChange={(event) =>
-                setCommand((current) => ({
-                  ...current,
-                  familiaId: event.target.value ? Number(event.target.value) : null,
-                }))
-              }
-            >
-              <option value="">Sin familia</option>
+              <option value="">Todas las familias</option>
               {resource.data?.familias.map((familia) => (
                 <option key={familia.id} value={familia.id}>
                   {familia.nombre}
@@ -192,6 +195,46 @@ export function ItemFormPage() {
               ))}
             </select>
           </label>
+
+          <div className="taxonomy-selection-summary">
+            <p className="field-label">Categorias seleccionadas</p>
+            <div className="tag-list">
+              {selectedCategories.length > 0 ? (
+                selectedCategories.map((categoria) => (
+                  <button
+                    key={categoria.id}
+                    type="button"
+                    className="tag-chip"
+                    onClick={() => toggleCategory(categoria.id, false)}
+                  >
+                    {categoria.familiaNombre} · {categoria.nombre}
+                  </button>
+                ))
+              ) : (
+                <span className="muted">Sin categorias seleccionadas.</span>
+              )}
+            </div>
+          </div>
+
+          <fieldset className="category-checkbox-list">
+            <legend>Categorias</legend>
+            {visibleCategories.length > 0 ? (
+              visibleCategories.map((categoria) => (
+                <label key={categoria.id} className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={selectedCategoryIds.has(categoria.id)}
+                    onChange={(event) => toggleCategory(categoria.id, event.target.checked)}
+                  />
+                  <span>
+                    {familyFilterId ? categoria.nombre : `${categoria.familiaNombre} · ${categoria.nombre}`}
+                  </span>
+                </label>
+              ))
+            ) : (
+              <p className="muted">No hay categorias para esta familia.</p>
+            )}
+          </fieldset>
         </div>
 
         <label className="field-block">

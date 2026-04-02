@@ -1,9 +1,9 @@
 import type { ItemListQuery, ItemSortField, SortDirection } from '../../application/dto';
-import type { NamedEntity } from '../../domain/entities';
+import type { Categoria, NamedEntity } from '../../domain/entities';
 
 interface ItemFilterPanelProps {
   query: ItemListQuery;
-  categorias: NamedEntity[];
+  categorias: Categoria[];
   familias: NamedEntity[];
   colecciones: NamedEntity[];
   expanded: boolean;
@@ -48,7 +48,7 @@ export function ItemFilterPanel({
               <option value="">Todas</option>
               {categorias.map((categoria) => (
                 <option key={categoria.id} value={categoria.id}>
-                  {categoria.nombre}
+                  {categoria.familiaNombre} · {categoria.nombre}
                 </option>
               ))}
             </select>

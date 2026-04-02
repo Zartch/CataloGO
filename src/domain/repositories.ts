@@ -1,4 +1,12 @@
-import type { Configuracion, DashboardSummary, EntityId, Item, NamedEntity } from './entities';
+import type {
+  Categoria,
+  Configuracion,
+  DashboardSummary,
+  EntityId,
+  Familia,
+  Item,
+  NamedEntity,
+} from './entities';
 import type {
   ImportRowError,
   ItemListQuery,
@@ -30,6 +38,18 @@ export interface NamedEntityRepository {
   delete(id: EntityId): Promise<void>;
 }
 
+export interface CategoriaRepository {
+  list(): Promise<Categoria[]>;
+  save(entity: { id?: EntityId; nombre: string; familiaId: EntityId }): Promise<EntityId>;
+  delete(id: EntityId): Promise<void>;
+  move(id: EntityId, familiaId: EntityId, targetIndex: number): Promise<void>;
+}
+
+export interface FamiliaRepository extends NamedEntityRepository {
+  listWithCategorias(): Promise<Familia[]>;
+  listForCollection(collectionId: EntityId): Promise<NamedEntity[]>;
+}
+
 export interface CollectionRepository extends NamedEntityRepository {
   listWithCounts(): Promise<Array<NamedEntity & { itemCount: number }>>;
   getById(id: EntityId): Promise<NamedEntity | null>;
@@ -45,15 +65,15 @@ export interface DashboardRepository {
 }
 
 export interface ImportSupportRepository {
-  ensureCategoria(nombre: string): Promise<EntityId>;
+  ensureCategoria(nombre: string, familiaId: EntityId): Promise<EntityId>;
   ensureFamilia(nombre: string): Promise<EntityId>;
   ensureColeccion(nombre: string): Promise<EntityId>;
 }
 
 export interface RepositoryBundle {
   items: ItemRepository;
-  categorias: NamedEntityRepository;
-  familias: NamedEntityRepository;
+  categorias: CategoriaRepository;
+  familias: FamiliaRepository;
   colecciones: CollectionRepository;
   configuracion: ConfiguracionRepository;
   dashboard: DashboardRepository;
